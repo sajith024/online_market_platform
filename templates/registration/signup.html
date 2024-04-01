@@ -1,0 +1,36 @@
+{% extends 'home/base.html' %} {% block content %}
+<div class="d-flex align-items-center vh-100">
+  <div class="container" style="width: 50%">
+    <form method="post" action="{% url 'signup' %}" class="row">
+      <div class="col-12">
+        <h1 class="mt-5 mb-3 text-centered">Signup</h1>
+      </div>
+      {% csrf_token %} {% for field in form %}
+      <div class="col-12">
+        <label for="{{ field.id_for_label }}" class="form-label"
+          >{{ field.label }}</label
+        >
+        <input
+          type="{% if 'password' in field.label_tag %}password{% else %}text{% endif %}"
+          name="{{ field.html_name }}"
+          class="form-control {% if field.errors %}is-invalid{% endif %}"
+          maxlength="{% if 'username' in field.label_tag %}150{% endif %}"
+          id="{{ field.id_for_label }}"
+          required
+        />
+
+        {% if field.errors %} {% for error in field.errors %}
+        <div class="invalid-feedback">{{ error }}</div>
+        {% endfor %} {% endif %}
+      </div>
+      {% endfor %}
+      <div class="col-6">
+        <button type="submit" class="btn btn-primary mt-2">Register</button>
+      </div>
+      <div class="col-6">
+        <a href="{% url 'login' %}" class="mt-2">Already have an account?</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
