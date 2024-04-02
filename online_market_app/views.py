@@ -25,7 +25,9 @@ def user_signup(request):
             form.save()
             return redirect("login")
     else:
-        form = SignupForm(request.POST or None)
+        form = SignupForm()
+    
+    print(form.cleaned_data)
     return render(request, "registration/signup.html", {"form": form})
 
 
@@ -43,7 +45,7 @@ def user_login(request):
                 messages.error(request, "Invalid username or password")
 
     else:
-        form = LoginForm(request.POST or None)
+        form = LoginForm()
 
     return render(request, "registration/login.html", {"form": form})
 

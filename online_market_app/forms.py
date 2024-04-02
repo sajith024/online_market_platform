@@ -1,6 +1,8 @@
+from typing import Any
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.models import User
+
+from .models import OnlineMarketUser, Role
 
 
 class SignupForm(UserCreationForm):
@@ -18,7 +20,7 @@ class SignupForm(UserCreationForm):
         return user
 
     class Meta:
-        model = User
+        model = OnlineMarketUser
         fields = (
             "username",
             "email",
@@ -26,6 +28,7 @@ class SignupForm(UserCreationForm):
             "last_name",
             "password1",
             "password2",
+            "role",
         )
 
 
