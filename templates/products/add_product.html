@@ -1,0 +1,57 @@
+{% extends 'home/base.html' %} {% block content %}
+<div class="d-flex align-items-center vh-100">
+  <div class="container" style="width: 50%">
+    <form method="post" action="{% url 'add_product' %}" enctype="multipart/form-data" class="row">
+      <div class="col-12">
+        <h1 class="mt-5 mb-3 text-centered">Add Product</h1>
+      </div>
+      {% csrf_token %}
+      <div class="col-12">
+        <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }}</label>
+        <input type="text" name="{{ form.name.name }}"
+          class="form-control {% if form.name.errors %}is-invalid{% endif %}" id="{{ form.name.id_for_label }}"
+          required />
+
+        {% if form.name.errors %}
+        {% for error in form.name.errors %}
+        <div class="invalid-feedback">{{ error }}</div>
+        {% endfor %}
+        {% endif %}
+      </div>
+      <div class="col-12">
+        <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+        <textarea class="form-control {% if form.description.errors %}is-invalid{% endif %}"
+          id="{{ form.description.id_for_label }}" rows="3" name="{{ form.description.name }}"></textarea>
+
+        {% if form.description.errors %} {% for error in form.description.errors %}
+        <div class="invalid-feedback">{{ error }}</div>
+        {% endfor %} {% endif %}
+      </div>
+      <div class="col-12">
+        <label for="{{ form.price.id_for_label }}" class="form-label">{{ form.price.label }}</label>
+        <input type="number" step="0.01" min="0" class="form-control {% if form.price.errors %}is-invalid{% endif %}"
+          id="{{ form.price.id_for_label }}" name="{{ form.price.name }}"></input>
+
+        {% if form.price.errors %} {% for error in form.price.errors %}
+        <div class="invalid-feedback">{{ error }}</div>
+        {% endfor %} {% endif %}
+      </div>
+      <div class="col-12">
+        <label for="{{ form.image.id_for_label }}" class="form-label">{{ form.image.label }}</label>
+        <input class="form-control {% if form.image.errors %}is-invalid{% endif %}" type="file"
+          id="{{ form.image.id_for_label }}" name="{{ form.image.name }}">
+
+        {% if form.image.errors %} {% for error in form.image.errors %}
+        <div class="invalid-feedback">{{ error }}</div>
+        {% endfor %} {% endif %}
+      </div>
+      <div class="col-6">
+        <a class="btn btn-primary mt-2" href="{% url 'home' %}">Cancel</a>
+      </div>
+      <div class="col-6">
+        <button type="submit" class="btn btn-primary mt-2">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

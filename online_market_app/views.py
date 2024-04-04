@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 
 from .forms import SignupForm, LoginForm
+from online_market_product.models import Product
 
 
 def default_view(request):
@@ -15,7 +16,12 @@ def default_view(request):
 
 @login_required
 def home(request):
-    return render(request, "home/home.html", {})
+    if request.user.role.name == "Seller":
+        products = Product.objects.filter(user=request.user)
+    else:
+        products = Product.objects.all()
+        
+    return render(request, "home/home.html", {"products": products})
 
 
 def user_signup(request):
@@ -26,8 +32,7 @@ def user_signup(request):
             return redirect("login")
     else:
         form = SignupForm()
-    
-    print(form.cleaned_data)
+        
     return render(request, "registration/signup.html", {"form": form})
 
 
