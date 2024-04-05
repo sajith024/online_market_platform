@@ -12,6 +12,7 @@ class OnlineMarketUserManager(BaseUserManager):
     ):
         extra_fields.setdefault("is_staff", False)
         extra_fields.setdefault("is_superuser", False)
+        extra_fields.setdefault("is_active", False)        
         if not username:
             raise ValueError("The given username must be set")
         if not role:
