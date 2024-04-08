@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "online_market_app",
     "online_market_api",
     "online_market_product",
+    "online_market_product_api",    
 ]
 
 MIDDLEWARE = [
@@ -91,6 +92,10 @@ REST_FRAMEWORK = {
         "online_market_api.authentication.OnlineMarketTokenAuthentication",
     ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_RENDERER_CLASSES": [
+        "online_market_api.renderers.OnlineMarketResponeRenderer",
+        "rest_framework.renderers.BrowsableAPIRenderer",
+    ],
 }
 
 SPECTACULAR_SETTINGS = {

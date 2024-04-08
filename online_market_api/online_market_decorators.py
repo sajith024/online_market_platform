@@ -20,15 +20,13 @@ def required_fields(exclude=[]):
                     missing_fields.append(field)
 
             if missing_fields:
-                data = {
-                    "status": status.HTTP_400_BAD_REQUEST,
-                    "error": {
-                        "missing_fields": missing_fields,
+                return Response(
+                    {
+                        "errors": {
+                            "missing_fields": missing_fields,
+                        },
                         "message": "Require Fields missing",
                     },
-                }
-                return Response(
-                    data,
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             return func(api_view, request, *args, **kwargs)

@@ -40,10 +40,7 @@ class RegistrationUserView(CreateAPIView):
 
             token = get_object_or_404(Token, user=serializer.instance)
             otp = OnlineMarketOTP.objects.get_or_create(user=serializer.instance)[0]
-
             data = {
-                "status": HTTP_201_CREATED,
-                "success": True,
                 "data": {
                     "id": serializer.instance.id,
                     "username": serializer.instance.username,
@@ -55,8 +52,6 @@ class RegistrationUserView(CreateAPIView):
             return Response(data, status=HTTP_201_CREATED)
         else:
             data = {
-                "status": HTTP_400_BAD_REQUEST,
-                "success": False,
                 "errors": serializer.errors,
                 "message": "Registration failed",
             }
@@ -75,53 +70,47 @@ class LoginUserView(CreateAPIView):
             password = serializer.validated_data["password"]
             user = authenticate(username=username, password=password)
             if user is not None:
-                otp = OnlineMarketOTP.objects.get(user=user)
-                if otp.is_verified:
-                    token = Token.objects.get_or_create(user=user)
-                    data = {
-                        "status": HTTP_200_OK,
-                        "success": True,
-                        "message": "Login successful",
-                        "data": {
-                            "id": user.id,
-                            "username": user.username,
-                            "is_verified": otp.is_verified,
-                            "token": str(token[0]),
-                        },
-                    }
-                    return Response(data, status=HTTP_200_OK)
-                else:
-                    data = {
-                        "status": HTTP_401_UNAUTHORIZED,
-                        "success": False,
-                        "message": "Verification Required",
-                        "data": {
-                            "id": user.id,
-                            "username": user.username,
-                            "is_verified": otp.is_verified,
-                        },
-                    }
-                    return Response(data, status=HTTP_401_UNAUTHORIZED)
-            else:
-                return Response(
-                    data={
-                        "status": HTTP_401_UNAUTHORIZED,
-                        "success": False,
-                        "errors": serializer.errors,
-                        "message": "Error",
+                # otp = OnlineMarketOTP.objects.get(user=user)
+                # if otp.is_verified:
+                #     token = Token.objects.get_or_create(user=user)
+                #     data = {
+                #         "status": HTTP_200_OK,
+                #         "success": True,
+                #         "message": "Login successful",
+                #         "data": {
+                #             "id": user.id,
+                #             "username": user.username,
+                #             "is_verified": otp.is_verified,
+                #             "token": str(token[0]),
+                #         },
+                #     }
+                #     return Response(data, status=HTTP_200_OK)
+                # else:
+                #     data = {
+                #         "status": HTTP_401_UNAUTHORIZED,
+                #         "success": False,
+                #         "message": "Verification Required",
+                #         "data": {
+                #             "id": user.id,
+                #             "username": user.username,
+                #             "is_verified": otp.is_verified,
+                #         },
+                #     }
+                #     return Response(data, status=HTTP_401_UNAUTHORIZED)
+                token = Token.objects.get_or_create(user=user)
+                data = {
+                    "message": "Login successful",
+                    "data": {
+                        "id": user.id,
+                        "username": user.username,
+                        "token": str(token[0]),
                     },
-                    status=HTTP_401_UNAUTHORIZED,
-                )
+                }
+                return Response(data, status=HTTP_200_OK)
+            else:
+                return Response(data=serializer.errors, status=HTTP_401_UNAUTHORIZED)
         else:
-            return Response(
-                data={
-                    "status": HTTP_400_BAD_REQUEST,
-                    "success": False,
-                    "errors": serializer.errors,
-                    "message": "Error",
-                },
-                status=HTTP_400_BAD_REQUEST,
-            )
+            return Response(data=serializer.errors, status=HTTP_400_BAD_REQUEST)
 
 
 @extend_schema_view()
@@ -139,22 +128,10 @@ class LogoutUserView(CreateAPIView):
             token.delete()
             otp.is_verified = False
             otp.save()
-            data = {
-                "status": HTTP_201_CREATED,
-                "success": True,
-                "message": "Logout successful",
-            }
+            data = {"message": "Logout successful"}
             return Response(data, status=HTTP_200_OK)
         else:
-            return Response(
-                data={
-                    "status": HTTP_400_BAD_REQUEST,
-                    "success": False,
-                    "errors": serializer.errors,
-                    "message": "Error",
-                },
-                status=HTTP_400_BAD_REQUEST,
-            )
+            return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
 
 
 @extend_schema_view()
@@ -171,22 +148,11 @@ class SMSVerificationView(CreateAPIView):
             )
             verification.send_sms_code()
             return Response(
-                data={
-                    "status": HTTP_200_OK,
-                    "success": True,
-                    "message": "OTP Verification Sended",
-                },
+                {"message": "OTP Verification Sended"},
                 status=HTTP_200_OK,
             )
         else:
-            return Response(
-                data={
-                    "status": HTTP_400_BAD_REQUEST,
-                    "success": False,
-                    "message": "Error",
-                },
-                status=HTTP_400_BAD_REQUEST,
-            )
+            return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
 
 
 @extend_schema_view()
@@ -205,33 +171,17 @@ class OTPVerificationView(CreateAPIView):
 
             if verification.verify_phone(serializer.validated_data["otp"]):
                 return Response(
-                    {
-                        "status": HTTP_201_CREATED,
-                        "success": True,
-                        "message": "OTP verified successfully",
-                    },
-                    status=HTTP_201_CREATED,
+                    {"message": "OTP verified successfully"},
+                    status=HTTP_200_OK,
                 )
             else:
                 return Response(
-                    data={
-                        "status": HTTP_400_BAD_REQUEST,
-                        "success": False,
-                        "message": "The provided code did not match or has expired",
-                    },
+                    {"message": "The provided code did not match or has expired"},
                     status=HTTP_400_BAD_REQUEST,
                 )
 
         else:
-            return Response(
-                data={
-                    "status": HTTP_400_BAD_REQUEST,
-                    "success": False,
-                    "message": "verification Failed",
-                    "errors": serializer.errors,
-                },
-                status=HTTP_400_BAD_REQUEST,
-            )
+            return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
 
 
 @extend_schema_view()

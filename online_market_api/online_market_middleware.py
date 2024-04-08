@@ -24,6 +24,6 @@ class OnlineMarketLogMiddleWare:
                 request_method=request.method,
                 request_path=request.path,
                 request_status=response.status_code,
-                response=response.data,
+                response=response.data or "",
             )
         return response
