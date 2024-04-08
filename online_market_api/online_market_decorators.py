@@ -7,8 +7,8 @@ def required_fields(exclude=[]):
         def wrapper(api_view, request, *args, **kwargs):
             required_fields = []
             for name, field in api_view.get_serializer().fields.items():
-                if hasattr(field, "allow_blank"):
-                    if not field.allow_blank:
+                if hasattr(field, "required"):
+                    if field.required:
                         required_fields.append(name)
                     else:
                         continue

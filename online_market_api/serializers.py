@@ -1,4 +1,5 @@
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import ModelSerializer, Serializer
+from rest_framework.serializers import CharField, PrimaryKeyRelatedField
 
 from online_market_app.models import OnlineMarketUser, Role
 
@@ -27,3 +28,21 @@ class RegistrationUserSerializer(ModelSerializer):
         user.save()
 
         return user
+
+
+class LoginUserSerializer(Serializer):
+    username = CharField()
+    password = CharField()
+
+
+class LogoutUserSerializer(Serializer):
+    user = PrimaryKeyRelatedField(queryset=OnlineMarketUser.objects.all())
+
+
+class SMSVerificationSerializer(Serializer):
+    user = PrimaryKeyRelatedField(queryset=OnlineMarketUser.objects.all())
+    phone_number = CharField(max_length=15)
+
+
+class OTPVerificationSerializer(SMSVerificationSerializer):
+    otp = CharField(max_length=6)
