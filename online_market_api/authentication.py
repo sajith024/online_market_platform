@@ -1,4 +1,4 @@
-import environ
+from decouple import config
 from twilio.rest import Client as TwilioClient
 from pyotp import TOTP, random_base32
 
@@ -7,17 +7,15 @@ from django.utils import timezone
 
 from .models import OnlineMarketOTP
 
-env = environ.Env()
-
 
 class OnlineMarketTokenAuthentication(TokenAuthentication):
     keyword = "Bearer"
 
 
 class OnlineMarketTwilioOTPVerification:
-    account_sid = env("TWILIO_ACCOUNT_SID")
-    auth_token = env("TWILIO_AUTH_TOKEN")
-    twilio_phone = env("TWILIO_PHONE")
+    account_sid = config("TWILIO_ACCOUNT_SID")
+    auth_token = config("TWILIO_AUTH_TOKEN")
+    twilio_phone = config("TWILIO_PHONE")
 
     def __init__(self, user, phone_number, interval=300) -> None:
         self.client = TwilioClient(self.account_sid, self.auth_token)

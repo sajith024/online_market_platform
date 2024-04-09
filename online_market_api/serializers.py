@@ -35,10 +35,6 @@ class LoginUserSerializer(Serializer):
     password = CharField()
 
 
-class LogoutUserSerializer(Serializer):
-    user = PrimaryKeyRelatedField(queryset=OnlineMarketUser.objects.all())
-
-
 class SMSVerificationSerializer(Serializer):
     user = PrimaryKeyRelatedField(queryset=OnlineMarketUser.objects.all())
     phone_number = CharField(max_length=15)

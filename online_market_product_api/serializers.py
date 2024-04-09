@@ -1,5 +1,8 @@
-from rest_framework.serializers import ModelSerializer
-from rest_framework.serializers import PrimaryKeyRelatedField
+from datetime import datetime
+
+from rest_framework.serializers import ModelSerializer, Serializer
+from rest_framework.serializers import PrimaryKeyRelatedField, CharField
+from rest_framework.serializers import ValidationError
 
 from online_market_app.models import OnlineMarketUser
 from online_market_product.models import Product
@@ -25,14 +28,14 @@ class ProductAddSerializer(ModelSerializer):
 
     class Meta:
         model = Product
-        fields = "__all__"
+        exclude = ("user",)
 
 
 class CartItemAddSerializer(ModelSerializer):
 
     class Meta:
         model = CartItem
-        fields = ("product", "quantity", "user")
+        fields = ("product", "quantity")
 
 
 class CartItemSerializer(ModelSerializer):
@@ -56,7 +59,7 @@ class OrderManagementAddSerializer(ModelSerializer):
 
     class Meta:
         model = OrderManagement
-        fields = ("items", "shipping_address", "user", "payment_status")
+        fields = ("items", "shipping_address")
 
     def create(self, validated_data):
         items = validated_data.pop("items")
@@ -71,3 +74,18 @@ class OrderManagementAddSerializer(ModelSerializer):
         order_management.save()
 
         return order_management
+
+    def update(self, instance, validated_data):
+
+        total_price = instance.total_price
+        if validated_data.get("items"):
+            total_price = 0
+            items = validated_data.pop("items")
+            instance.items.clear()
+            for item in items:
+                total_price += item.quantity * item.product.price
+                instance.items.add(item)
+
+        instance.total_price = total_price
+        instance.save()
+        return instance
