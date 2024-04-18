@@ -3,6 +3,8 @@ from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q
 
+from decouple import config
+
 from .models import Product
 from .forms import ProductForm, EditProductForm
 
@@ -75,6 +77,12 @@ def filter_product(request):
         return render(request, "home/home.html", {"products": products})
     else:
         return redirect("home")
+
+
+def product_payment(request):
+    return render(
+        request, "products/payments.html", {"API_KEY": config("STRIPE_PUBLISHABLE_KEY")}
+    )
 
 
 def parse_decimal(value):
