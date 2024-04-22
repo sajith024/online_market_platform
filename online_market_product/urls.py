@@ -7,6 +7,7 @@ from .views import (
     search_product,
     filter_product,
     product_payment,
+    payment_success,
 )
 
 urlpatterns = [
@@ -15,5 +16,6 @@ urlpatterns = [
     path("delete/<int:pk>/", delete_product, name="delete_product"),
     path("search/", search_product, name="search_product"),
     path("filter/", filter_product, name="filter_product"),
-    path("product_payment/", product_payment, name="product_payment"),
+    path("payments/product_payment/<int:pk>/", product_payment, name="product_payment"),
+    path("payments/success/", payment_success, name="checkout_success"),
 ]

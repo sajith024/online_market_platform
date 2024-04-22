@@ -1,3 +1,5 @@
+import logging
+
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from django.contrib.auth import authenticate
 from rest_framework.generics import CreateAPIView
@@ -26,6 +28,9 @@ from .online_market_decorators import required_fields
 from online_market_api.authentication import OnlineMarketTwilioOTPVerification
 
 
+logger = logging.getLogger(__name__)
+
+
 @extend_schema_view()
 class RegistrationUserView(CreateAPIView):
     queryset = OnlineMarketUser.objects.all()
@@ -37,7 +42,6 @@ class RegistrationUserView(CreateAPIView):
         if serializer.is_valid():
             self.perform_create(serializer)
 
-            # token = get_object_or_404(Token, user=serializer.instance)
             token = RefreshToken.for_user(user=serializer.instance)
             otp = OnlineMarketOTP.objects.get_or_create(user=serializer.instance)[0]
             data = {
@@ -112,8 +116,10 @@ class LoginUserView(CreateAPIView):
                         },
                     },
                 }
+                logger.info(f"Login successful for {user.get_username()}")
                 return Response(data, status=HTTP_200_OK)
             else:
+                logger.warning(f"Unauthorized Login.")
                 return Response(data=serializer.errors, status=HTTP_401_UNAUTHORIZED)
         else:
             return Response(data=serializer.errors, status=HTTP_400_BAD_REQUEST)

@@ -1,3 +1,5 @@
+from logging import getLogger
+
 from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
@@ -9,7 +11,12 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST
+from rest_framework.status import (
+    HTTP_200_OK,
+    HTTP_201_CREATED,
+    HTTP_400_BAD_REQUEST,
+    HTTP_500_INTERNAL_SERVER_ERROR,
+)
 
 import stripe
 from stripe import error as strip_error
@@ -34,6 +41,9 @@ from .serializers import (
     OrderManagementSerializer,
     OrderManagementAddSerializer,
 )
+
+
+logger = getLogger(__name__)
 
 
 @extend_schema_view(
@@ -226,13 +236,27 @@ class OrderManagementViewSet(ModelViewSet):
 
 
 class OnlineMarketPaymentViewSet(GenericViewSet):
-    STRIPE_ENDPOINT_SECRET = config("STRIPE_ENDPOINT_SECRET")
+    STRIPE_WEBHOOK_SECRET = config("STRIPE_WEBHOOK_SECRET")
     STRIPE_API_KEY = config("STRIPE_SECRET_KEY")
 
-    @action(detail=False, methods=["post"])
+    @action(detail=False, methods=["GET"])
+    def stripe_config(self, request):
+        return Response(
+            {"publishableKey": config("STRIPE_PUBLISHABLE_KEY")}, status=HTTP_200_OK
+        )
+
+    @action(detail=False, methods=["POST"])
     def create_payment(self, request):
         try:
-            amount = request.data.get("amount")
+            logger.debug(f"request data {request.data}")
+            order_id = request.data.get("order_id")
+            try:
+                order = OrderManagement.objects.get(id=order_id)
+            except OrderManagement.DoesNotExist:
+                return Response(
+                    {"errors": "Order not found"}, status=HTTP_400_BAD_REQUEST
+                )
+
             currency = "usd"
             customer = stripe.Customer.create(
                 name="Jenny Rosen",
@@ -245,24 +269,22 @@ class OnlineMarketPaymentViewSet(GenericViewSet):
                 },
                 api_key=self.STRIPE_API_KEY,
             )
+            logger.debug(f"customer id: {customer.id}")
             intent = stripe.PaymentIntent.create(
-                amount=amount,
-                currency=currency,
-                automatic_payment_methods={"enabled": True, "allow_redirects": "never"},
                 api_key=self.STRIPE_API_KEY,
-                payment_method="pm_card_visa",
+                currency=currency,
                 customer=customer.id,
+                amount=int(order.total_price),
                 description="Goods",
             )
-            client_secret = intent.client_secret
-            return Response({"client_secret": client_secret})
-            # return Response({"PaymentIntent": intent})
+            logger.debug(f"clientSecret: {intent.client_secret}")
+            return Response({"clientSecret": intent.client_secret}, status=HTTP_200_OK)
         except strip_error.StripeError as e:
-            return Response({"errors": str(e)}, status=400)
+            return Response({"errors": str(e)}, status=HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({"errors": str(e)}, status=500)
+            return Response({"errors": str(e)}, status=HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=False, methods=["post"])
+    @action(detail=False, methods=["POST"])
     def handle_webhook(self, request):
         raw_payload = request.body
         payload = request.data
@@ -270,7 +292,7 @@ class OnlineMarketPaymentViewSet(GenericViewSet):
         event = None
         try:
             event = stripe.Webhook.construct_event(
-                raw_payload, sig_header, self.STRIPE_ENDPOINT_SECRET
+                raw_payload, sig_header, self.STRIPE_WEBHOOK_SECRET
             )
         except ValueError as e:
             print("value:", e)

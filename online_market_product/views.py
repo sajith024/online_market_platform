@@ -3,9 +3,8 @@ from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q
 
-from decouple import config
-
 from .models import Product
+from online_market_product_api.models import OrderManagement
 from .forms import ProductForm, EditProductForm
 
 
@@ -79,11 +78,16 @@ def filter_product(request):
         return redirect("home")
 
 
-def product_payment(request):
-    return render(
-        request, "products/payments.html", {"API_KEY": config("STRIPE_PUBLISHABLE_KEY")}
-    )
+def product_payment(request, pk):
+    try:
+        order = OrderManagement.objects.get(pk=pk)
+    except OrderManagement.DoesNotExist:
+        return redirect("home")
 
+    return render(request, "payments/checkout.html", {"order": order})
+
+def payment_success(request):
+    return render(request, "payments/success.html")
 
 def parse_decimal(value):
     return Decimal(value if value else 0)

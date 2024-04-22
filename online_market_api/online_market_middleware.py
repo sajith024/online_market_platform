@@ -2,11 +2,7 @@ import logging
 
 from .models import OnlineMarketLogs
 
-
-logging.basicConfig(level=logging.INFO)
-
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 class OnlineMarketLogMiddleWare:
