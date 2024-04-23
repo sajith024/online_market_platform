@@ -9,6 +9,7 @@ class OrderManagement(models.Model):
     PAYMENT_STATUS = [
         ("pending", "Pending"),
         ("paid", "Paid"),
+        ("processing", "processing"),
         ("failed", "Payment Failed"),
         ("cancelled", "Cancelled"),
         ("refunded", "Refunded"),

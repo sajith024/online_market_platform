@@ -119,7 +119,7 @@ class LoginUserView(CreateAPIView):
                 logger.info(f"Login successful for {user.get_username()}")
                 return Response(data, status=HTTP_200_OK)
             else:
-                logger.warning(f"Unauthorized Login.")
+                logger.warning( "Unauthorized Login.")
                 return Response(data=serializer.errors, status=HTTP_401_UNAUTHORIZED)
         else:
             return Response(data=serializer.errors, status=HTTP_400_BAD_REQUEST)

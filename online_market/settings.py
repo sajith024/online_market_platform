@@ -36,6 +36,8 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",
+    "channels",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -49,6 +51,7 @@ INSTALLED_APPS = [
     "online_market_api",
     "online_market_product",
     "online_market_product_api",
+    "customer_support",
 ]
 
 MIDDLEWARE = [
@@ -83,7 +86,13 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "online_market.wsgi.application"
+ASGI_APPLICATION = 'online_market.asgi.application'
 
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [

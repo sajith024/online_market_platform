@@ -1,4 +1,5 @@
 from decimal import Decimal
+from logging import getLogger
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q
@@ -6,6 +7,9 @@ from django.db.models import Q
 from .models import Product
 from online_market_product_api.models import OrderManagement
 from .forms import ProductForm, EditProductForm
+
+
+logger = getLogger(__name__)
 
 
 def add_product(request):
@@ -78,16 +82,13 @@ def filter_product(request):
         return redirect("home")
 
 
-def product_payment(request, pk):
-    try:
-        order = OrderManagement.objects.get(pk=pk)
-    except OrderManagement.DoesNotExist:
-        return redirect("home")
-
-    return render(request, "payments/checkout.html", {"order": order})
-
 def payment_success(request):
     return render(request, "payments/success.html")
+
+
+def payment_cancel(request):
+    return render(request, "payments/cancel.html")
+
 
 def parse_decimal(value):
     return Decimal(value if value else 0)

@@ -23,6 +23,7 @@ from stripe import error as strip_error
 from decouple import config
 
 from online_market_api.online_market_decorators import required_fields
+from online_market_app.models import OnlineMarketStripeCustomer
 from online_market_product.models import Product
 from online_market_api.permissions import (
     IsSellerOrReadOnly,
@@ -248,7 +249,6 @@ class OnlineMarketPaymentViewSet(GenericViewSet):
     @action(detail=False, methods=["POST"])
     def create_payment(self, request):
         try:
-            logger.debug(f"request data {request.data}")
             order_id = request.data.get("order_id")
             try:
                 order = OrderManagement.objects.get(id=order_id)
@@ -257,28 +257,60 @@ class OnlineMarketPaymentViewSet(GenericViewSet):
                     {"errors": "Order not found"}, status=HTTP_400_BAD_REQUEST
                 )
 
-            currency = "usd"
-            customer = stripe.Customer.create(
-                name="Jenny Rosen",
-                address={
-                    "line1": "510 Townsend St",
-                    "postal_code": "98140",
-                    "city": "San Francisco",
-                    "state": "CA",
-                    "country": "US",
-                },
+            if order.payment_status == "processing":
+                return Response({"errors": "Order in processing fee."}, status=HTTP_400_BAD_REQUEST)
+            elif order.payment_status == "paid":
+                return Response({"errors": "Order paid"}, status=HTTP_400_BAD_REQUEST)
+
+            order.payment_status = "processing"
+            order.save()
+            try:
+                stripe_customer = OnlineMarketStripeCustomer.objects.get(
+                    user=order.user
+                )
+            except OnlineMarketStripeCustomer.DoesNotExist:
+                customer = stripe.Customer.create(
+                    name=order.user.get_full_name(),
+                    email=order.user.email,
+                    address={
+                        "line1": "Thiruvananthapuram",
+                        "city": "Thiruvananthapuram",
+                        "country": "IN",
+                        "state": "Kerala",
+                        "postal_code": "605036",
+                    },
+                    api_key=self.STRIPE_API_KEY,
+                )
+
+                stripe_customer = OnlineMarketStripeCustomer.objects.create(
+                    user=order.user, client_id=customer.id
+                )
+
+            logger.debug(f"customer id: {stripe_customer.client_id}")
+
+            checkout_session = stripe.checkout.Session.create(
+                customer=stripe_customer.client_id,
+                line_items=[
+                    {
+                        "price_data": {
+                            "currency": "INR",
+                            "unit_amount_decimal": int(order.total_price * 100),
+                            "product_data": {
+                                "name": "name of the product",
+                            },
+                        },
+                        "quantity": 1,
+                    },
+                ],
+                mode="payment",
+                success_url="http://127.0.0.1:8000/payments/success/",
+                cancel_url="http://127.0.0.1:8000/payments/cancel/",
                 api_key=self.STRIPE_API_KEY,
             )
-            logger.debug(f"customer id: {customer.id}")
-            intent = stripe.PaymentIntent.create(
-                api_key=self.STRIPE_API_KEY,
-                currency=currency,
-                customer=customer.id,
-                amount=int(order.total_price),
-                description="Goods",
+
+            return Response(
+                {"session_url": checkout_session.url}, status=HTTP_201_CREATED
             )
-            logger.debug(f"clientSecret: {intent.client_secret}")
-            return Response({"clientSecret": intent.client_secret}, status=HTTP_200_OK)
         except strip_error.StripeError as e:
             return Response({"errors": str(e)}, status=HTTP_400_BAD_REQUEST)
         except Exception as e:
@@ -287,7 +319,6 @@ class OnlineMarketPaymentViewSet(GenericViewSet):
     @action(detail=False, methods=["POST"])
     def handle_webhook(self, request):
         raw_payload = request.body
-        payload = request.data
         sig_header = request.headers.get("Stripe-Signature")
         event = None
         try:
@@ -301,9 +332,26 @@ class OnlineMarketPaymentViewSet(GenericViewSet):
             print("stripe", e)
             return Response("Invalid signature", HTTP_400_BAD_REQUEST)
 
-        if event and event["type"] == "payment_intent.succeeded":
-            print("Success", event["type"])
-        else:
-            print("Failed", event["type"])
+        if event:
+            session_intent = event.data.object
+            order_id = session_intent.get("metadata").get("order_id")
+            order = None
+            
+            try:
+                order = OrderManagement.objects.get(id=int(order_id))
+            except OrderManagement.DoesNotExist:
+                logger.debug(f"Invalid order {order_id}")
+
+            logger.debug(f"Invalid payment_intent {session_intent}")
+
+            if event["type"] == "payment_intent.succeeded":
+                if order:
+                    order.payment_status = "paid"
+                    order.save()
+            else:
+                if order:
+                    order.payment_status = "failed"
+                    order.save()
+                logger.debug(f"Failed {event['type']}")
 
         return Response(status=HTTP_200_OK)
