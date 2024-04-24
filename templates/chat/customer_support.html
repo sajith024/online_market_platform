@@ -1,0 +1,47 @@
+{% extends "home/base.html" %}
+{% block content %}
+    <div class="container">
+        <div class="d-flex flex-column justify-content-center align-items-center vh-100">
+            <div class="col-6">
+                <div class="mb-3">
+                    <label for="chat-receiver" class="form-label">Contact</label>
+                    <input class="form-control" id="chat-receiver" type="text" />
+                </div>
+                <div class="mb-3">
+                    <label for="chat-text" class="form-label">Received</label>
+                    <textarea class="form-control" id="chat-text" rows="10"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="input-text" class="form-label">Enter Message</label>
+                    <input class="form-control" id="input-text" type="text" />
+                </div>
+                <input class="btn btn-success" id="submit" type="button" value="Send" />
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+{% block extra_scripts %}
+    <script>
+        const chatSocket = new WebSocket(
+            "ws://" + window.location.host + "/ws/chat/?token={{ token }}"
+        );
+        const userNameElement = document.querySelector("#chat-receiver");
+        const msgInput = document.querySelector("#input-text");
+        const chatText = document.querySelector("#chat-text");
+
+        document.querySelector("#submit").addEventListener("click", () => { 
+            chatSocket.send(JSON.stringify({ message: msgInput.value, receiver: userNameElement.value }));
+            chatText.value +=  formatMessage("me" ,msgInput.value);
+            msgInput.value = "";
+        });
+
+        chatSocket.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+            chatText.value +=  formatMessage(data.sender ,data.message);
+        };
+
+        function formatMessage(user, message){
+            return user + ": " + message + "\n";
+        }
+    </script>
+{% endblock extra_scripts %}

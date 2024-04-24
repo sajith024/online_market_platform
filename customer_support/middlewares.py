@@ -2,33 +2,39 @@ from urllib.parse import parse_qs
 
 from channels.db import database_sync_to_async
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AnonymousUser
-from rest_framework_simplejwt.tokens import AccessToken, TokenError
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.exceptions import InvalidToken
 
 
-@database_sync_to_async
-def get_user(user_id):
-    User = get_user_model()
-
-    try:
-        return User.objects.get(id=user_id)
-    except User.DoesNotExist:
-        return AnonymousUser()
-
-
-class WebSocketJWTAuthMiddleware:
-
-    def __init__(self, app):
-        self.app = app
+class JWTAuthMiddleware:
+    def __init__(self, inner):
+        self.inner = inner
 
     async def __call__(self, scope, receive, send):
-        parsed_query_string = parse_qs(scope["query_string"])
-        token = parsed_query_string.get(b"token")
-        token_decoded = token[0].decode("utf-8")
-        try:
-            access_token = AccessToken(token_decoded)
-            scope["user"] = await get_user(access_token["user_id"])
-        except TokenError:
-            scope["user"] = AnonymousUser()
+        token = self.get_token(scope)
+        if token:
+            try:
+                validated_token = JWTAuthentication().get_validated_token(token)
+                scope["user"] = await self.get_user(validated_token)
+            except InvalidToken:
+                scope["user"] = None
 
-        return await self.app(scope, receive, send)
+        return await self.inner(scope, receive, send)
+
+    def get_token(self, scope):
+        parsed_query_string = parse_qs(scope["query_string"])
+        data = parsed_query_string.get(b"token")
+        if data:
+            token = data[0].decode("utf-8")
+        else:
+            token = None
+        return token
+
+    @database_sync_to_async
+    def get_user(self, validated_token):
+        User = get_user_model()
+        user_id = validated_token["user_id"]
+        try:
+            return User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return None

@@ -258,7 +258,9 @@ class OnlineMarketPaymentViewSet(GenericViewSet):
                 )
 
             if order.payment_status == "processing":
-                return Response({"errors": "Order in processing fee."}, status=HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"errors": "Order in processing fee."}, status=HTTP_400_BAD_REQUEST
+                )
             elif order.payment_status == "paid":
                 return Response({"errors": "Order paid"}, status=HTTP_400_BAD_REQUEST)
 
@@ -302,11 +304,19 @@ class OnlineMarketPaymentViewSet(GenericViewSet):
                         "quantity": 1,
                     },
                 ],
+                payment_intent_data={
+                    "metadata": {
+                        "order_id": order.id,
+                    }
+                },
+                allow_promotion_codes=True,
                 mode="payment",
                 success_url="http://127.0.0.1:8000/payments/success/",
                 cancel_url="http://127.0.0.1:8000/payments/cancel/",
                 api_key=self.STRIPE_API_KEY,
             )
+
+            logger.debug(f"sesssion {checkout_session}")
 
             return Response(
                 {"session_url": checkout_session.url}, status=HTTP_201_CREATED
@@ -332,26 +342,24 @@ class OnlineMarketPaymentViewSet(GenericViewSet):
             print("stripe", e)
             return Response("Invalid signature", HTTP_400_BAD_REQUEST)
 
-        if event:
-            session_intent = event.data.object
-            order_id = session_intent.get("metadata").get("order_id")
+        session_intent = event.data.object
+        logger.debug(f"Invalid payment_intent {session_intent}")
+        metadata = session_intent.get("metadata")
+        try:
+            order_id = metadata.get("order_id")
+            order = OrderManagement.objects.get(id=int(order_id))
+        except Exception:
             order = None
-            
-            try:
-                order = OrderManagement.objects.get(id=int(order_id))
-            except OrderManagement.DoesNotExist:
-                logger.debug(f"Invalid order {order_id}")
+            logger.debug(f"Invalid order {order_id}")
 
-            logger.debug(f"Invalid payment_intent {session_intent}")
-
+        if event and order and order.payment_status != "paid":
             if event["type"] == "payment_intent.succeeded":
-                if order:
-                    order.payment_status = "paid"
-                    order.save()
-            else:
-                if order:
-                    order.payment_status = "failed"
-                    order.save()
+                order.payment_status = "paid"
+            elif event["type"] == "payment_intent.payment_failed":
+                order.payment_status = "failed"
                 logger.debug(f"Failed {event['type']}")
+            else:
+                order.payment_status = "processing"
+            order.save()
 
         return Response(status=HTTP_200_OK)
