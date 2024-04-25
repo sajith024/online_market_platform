@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .forms import SignupForm, LoginForm
 from online_market_product.models import Product
@@ -20,8 +21,8 @@ def home(request):
         products = Product.objects.filter(user=request.user)
     else:
         products = Product.objects.all()
-        
-    return render(request, "home/home.html", {"products": products})
+    token = request.session.get("token")
+    return render(request, "home/home.html", {"products": products, "token": token})
 
 
 def user_signup(request):
@@ -32,7 +33,7 @@ def user_signup(request):
             return redirect("login")
     else:
         form = SignupForm()
-        
+
     return render(request, "registration/signup.html", {"form": form})
 
 
@@ -45,6 +46,8 @@ def user_login(request):
             user = authenticate(request, username=username, password=password)
             if user is not None:
                 login(request, user)
+                token = RefreshToken.for_user(user)
+                request.session["token"] = str(token.access_token)
                 return redirect("home")
             else:
                 messages.error(request, "Invalid username or password")

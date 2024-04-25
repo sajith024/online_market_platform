@@ -1,40 +1,44 @@
-{% extends 'home/base.html' %} {% block content %}
-<div class="d-flex align-items-center vh-100">
-  <div class="container" style="width: 50%">
-    <form class="row g-3" method="post" action="{% url 'login' %}">
-      <div class="col-12">
-        <h1 class="mt-5 mb-3 text-centered">Login</h1>
-      </div>
-      {% csrf_token %} {% for field in form %}
-      <div class="col-12">
-        <label for="{{ field.id_for_label }}" class="form-label"
-          >{{ field.label }}</label
-        >
-        <input
-          type="{% if 'password' in field.label_tag %}password{% else %}text{% endif %}"
-          name="{{ field.html_name }}"
-          class="form-control"
-          class="form-control {% if field.errors %}is-invalid{% endif %}"
-          maxlength="{% if 'username' in field.label_tag %}150{% endif %}"
-          id="{{ field.id_for_label }}"
-          required
-        />
-        {% if field.errors %} {% for error in field.errors %}
-        <div class="invalid-feedback">{{ error }}</div>
-        {% endfor %} {% endif %}
-      </div>
-      {% endfor %} {% if messages %} {% for message in messages %}
-      <div class="col-12">
-        <div class="alert alert-danger" role="alert">{{ message }}</div>
-      </div>
-      {% endfor %} {% endif %}
-      <div class="col-6">
-        <button type="submit" class="btn btn-primary mt-2">Login</button>
-      </div>
-      <div class="col-6">
-        <a href="{% url 'signup' %}" class="mt-2">Don't have an account?</a>
-      </div>
-    </form>
+{% extends 'home/base.html' %}
+{% block content %}
+  <div class="d-flex align-items-center vh-100">
+    <div class="container" style="width: 50%">
+      <form class="row g-3" method="post" action="{% url 'login' %}">
+        <div class="col-12">
+          <h1 class="mt-5 mb-3 text-centered">Login</h1>
+        </div>
+        {% csrf_token %}
+        {% for field in form %}
+          <div class="col-12">
+            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+            <input type="{% if 'password' in field.label_tag %}password{% else %}text{% endif %}"
+                   name="{{ field.html_name }}"
+                   class="form-control"
+                   class="form-control {% if field.errors %}is-invalid{% endif %}"
+                   maxlength="{% if 'username' in field.label_tag %}150{% endif %}"
+                   id="{{ field.id_for_label }}"
+                   required />
+            {% if field.errors %}
+              {% for error in field.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+            {% endif %}
+          </div>
+        {% endfor %}
+        {% if messages %}
+          {% for message in messages %}
+            <div class="col-12">
+              <div class="alert alert-danger" role="alert">{{ message }}</div>
+            </div>
+          {% endfor %}
+        {% endif %}
+        <div class="col-6">
+          <button type="submit" class="btn btn-primary mt-2">Login</button>
+        </div>
+        <div class="col-6">
+          <a href="{% url 'signup' %}" class="mt-2">Don't have an account?</a>
+        </div>
+      </form>
+    </div>
   </div>
-</div>
 {% endblock %}
+{% block extra_scripts %}
+  <script>localStorage.clear();</script>
+{% endblock extra_scripts %}

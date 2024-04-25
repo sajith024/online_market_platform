@@ -15,7 +15,9 @@ class OnlineMarketUser(AbstractUser):
     role = models.ForeignKey(Role, on_delete=models.CASCADE)
 
     objects = OnlineMarketUserManager()
-
+    
+    def __str__(self) -> str:
+            return self.get_username()
 
 class OnlineMarketStripeCustomer(models.Model):
     client_id = models.CharField(unique=True)

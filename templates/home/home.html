@@ -1,164 +1,132 @@
-{% extends 'home/base.html' %} {% block content %} 
-{% include 'home/nav_bar.html' %} {% load static %}
-<div class="container">
-  <div class="row">
-    {% if request.user.role.name == 'Seller' %}
-    <div class="col-6">
-      <h2 class="mt-5 mb-3">Welcome, {{ request.user.username }}!</h2>
-    </div>
-    <div class="col-6">
-      <a class="btn btn-primary mt-5 mb-3" href="{% url 'add_product' %}"
-        >Add Products</a
-      >
-    </div>
-    {% else %}
-    <div class="col-12">
-      <h2 class="mt-5 mb-3">Welcome, {{ request.user.username }}!</h2>
-    </div>
-    {% endif %}
-    <div class="col-6">
-      <form
-        class="d-flex"
-        role="search"
-        method="get"
-        action="{% url 'filter_product' %}"
-      >
-        <input
-          class="form-control me-2"
-          type="number"
-          min="0"
-          placeholder="Minimum Price"
-          aria-label="Minimum Price"
-          name="min"
-        />
-        <input
-          class="form-control me-2"
-          type="number"
-          min="0"
-          placeholder="Maximum Price"
-          aria-label="Maximum Price"
-          name="max"
-        />
-        <button class="btn btn-outline-success" type="submit">Filter</button>
-      </form>
-    </div>
-    <div class="col-6">
-      <form
-        class="d-flex"
-        role="search"
-        method="get"
-        action="{% url 'search_product' %}"
-      >
-        <input
-          class="form-control me-2"
-          type="search"
-          placeholder="Search"
-          aria-label="Search"
-          name="search"
-        />
-        <button class="btn btn-outline-success" type="submit">Search</button>
-      </form>
-    </div>
-    <div class="col-12">
-      {% if products %}
-      <div class="container overflow-y-auto" style="height: 80vh">
-        <div class="row row-cols-4 gy-2">
-          {% for product in products %}
-          <div class="col">
-            <div class="card" style="width: 18rem">
-              <img
-                src="{{product.image.url}}"
-                class="card-img-top"
-                alt="..."
-                style="height: 12rem"
-              />
-              <div class="card-body">
-                <h5 class="card-title">{{product.name}}</h5>
-                <p class="card-text">Price: {{product.price}}</p>
-                <p class="card-text">{{product.description}}</p>
-                {% if request.user.role.name == 'Seller' %}
-                <div class="row">
-                  <div class="col-6">
-                    <a
-                      class="btn btn-primary"
-                      href="{% url 'edit_product' product.id %}"
-                      >Edit</a
-                    >
-                  </div>
-                  <div class="col-6">
-                    <button
-                      onclick="deleteProduct(this)"
-                      type="button"
-                      class="btn btn-danger"
-                      data-bs-toggle="modal"
-                      data-bs-target="#deleteStaticBackdrop"
-                      data-url="{% url 'delete_product' product.id %}"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-                {% else %}
-                <p class="card-text">
-                  <small class="text-body-secondary"
-                    >Seller: {{product.user.get_full_name}}</small
-                  >
-                </p>
-                <a class="btn btn-primary">Add to cart</a>
-                {% endif %}
-              </div>
-            </div>
-          </div>
-          {% endfor %}
+{% extends 'home/base.html' %}
+{% block content %}
+  {% include 'home/nav_bar.html' %}
+  {% load static %}
+  <div class="container">
+    <div class="row">
+      {% if request.user.role.name == 'Seller' %}
+        <div class="col-6">
+          <h2 class="mt-5 mb-3">Welcome, {{ request.user.username }}!</h2>
         </div>
-      </div>
+        <div class="col-6">
+          <a class="btn btn-primary mt-5 mb-3" href="{% url 'add_product' %}">Add Products</a>
+        </div>
       {% else %}
-      <div class="d-flex flex-column justify-content-center">
-        <h4>No Products Found!.</h4>
-      </div>
+        <div class="col-12">
+          <h2 class="mt-5 mb-3">Welcome, {{ request.user.username }}!</h2>
+        </div>
       {% endif %}
-    </div>
-  </div>
-</div>
-<div
-  class="modal fade"
-  id="deleteStaticBackdrop"
-  data-bs-backdrop="static"
-  data-bs-keyboard="false"
-  tabindex="-1"
-  aria-labelledby="deleteStaticBackdropLabel"
-  aria-hidden="true"
->
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h1 class="modal-title fs-5" id="deleteStaticBackdropLabel">
-          Delete Product
-        </h1>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-          aria-label="Close"
-        ></button>
-      </div>
-      <div class="modal-body">Are you Want To delete?</div>
-      <div class="modal-footer">
-        <form method="post">
-          {% csrf_token %}
-          <button
-            type="button"
-            class="btn btn-secondary"
-            data-bs-dismiss="modal"
-          >
-            Close
-          </button>
-          <button type="type" class="btn btn-danger">Delete</button>
+      <div class="col-6">
+        <form class="d-flex"
+              role="search"
+              method="get"
+              action="{% url 'filter_product' %}">
+          <input class="form-control me-2"
+                 type="number"
+                 min="0"
+                 placeholder="Minimum Price"
+                 aria-label="Minimum Price"
+                 name="min" />
+          <input class="form-control me-2"
+                 type="number"
+                 min="0"
+                 placeholder="Maximum Price"
+                 aria-label="Maximum Price"
+                 name="max" />
+          <button class="btn btn-outline-success" type="submit">Filter</button>
         </form>
       </div>
+      <div class="col-6">
+        <form class="d-flex"
+              role="search"
+              method="get"
+              action="{% url 'search_product' %}">
+          <input class="form-control me-2"
+                 type="search"
+                 placeholder="Search"
+                 aria-label="Search"
+                 name="search" />
+          <button class="btn btn-outline-success" type="submit">Search</button>
+        </form>
+      </div>
+      <div class="col-12">
+        {% if products %}
+          <div class="container overflow-y-auto" style="height: 80vh">
+            <div class="row row-cols-4 gy-2">
+              {% for product in products %}
+                <div class="col">
+                  <div class="card" style="width: 18rem">
+                    <img src="{{ product.image.url }}"
+                         class="card-img-top"
+                         alt="..."
+                         style="height: 12rem" />
+                    <div class="card-body">
+                      <h5 class="card-title">{{ product.name }}</h5>
+                      <p class="card-text">Price: {{ product.price }}</p>
+                      <p class="card-text">{{ product.description }}</p>
+                      {% if request.user.role.name == 'Seller' %}
+                        <div class="row">
+                          <div class="col-6">
+                            <a class="btn btn-primary" href="{% url 'edit_product' product.id %}">Edit</a>
+                          </div>
+                          <div class="col-6">
+                            <button onclick="deleteProduct(this)"
+                                    type="button"
+                                    class="btn btn-danger"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#deleteStaticBackdrop"
+                                    data-url="{% url 'delete_product' product.id %}">Delete</button>
+                          </div>
+                        </div>
+                      {% else %}
+                        <p class="card-text">
+                          <small class="text-body-secondary">Seller: {{ product.user.get_full_name }}</small>
+                        </p>
+                        <a class="btn btn-primary">Add to cart</a>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% else %}
+          <div class="d-flex flex-column justify-content-center">
+            <h4>No Products Found!.</h4>
+          </div>
+        {% endif %}
+      </div>
     </div>
   </div>
-</div>
-{% endblock %} {% block extra_scripts %}
-<script src="{% static 'js/product/product.js' %}"></script>
+  <div class="modal fade"
+       id="deleteStaticBackdrop"
+       data-bs-backdrop="static"
+       data-bs-keyboard="false"
+       tabindex="-1"
+       aria-labelledby="deleteStaticBackdropLabel"
+       aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="deleteStaticBackdropLabel">Delete Product</h1>
+          <button type="button"
+                  class="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"></button>
+        </div>
+        <div class="modal-body">Are you Want To delete?</div>
+        <div class="modal-footer">
+          <form method="post">
+            {% csrf_token %}
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="type" class="btn btn-danger">Delete</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+{% block extra_scripts %}
+  <script src="{% static 'js/product/product.js' %}"></script>
+  {% if token %}<script>localStorage.setItem("token", "{{ token }}");</script>{% endif %}
 {% endblock extra_scripts %}

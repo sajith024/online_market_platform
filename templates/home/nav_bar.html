@@ -1,6 +1,6 @@
 <nav class="navbar navbar-expand-lg bg-body-tertiary">
   <div class="container-fluid">
-    <a class="navbar-brand" href="{% url 'home'%}">Online Marketplace</a>
+    <a class="navbar-brand" href="{% url 'home' %}">Online Marketplace</a>
     <button
       class="navbar-toggler"
       type="button"
@@ -11,8 +11,14 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item">
-          <a class="nav-link active" href="{% url 'home'%}">Link</a>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Chat
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{% url 'customer_support' %}">Customer Support</a></li>
+            <li><a class="dropdown-item" href="{% url 'community' %}">Community</a></li>
+          </ul>
         </li>
       </ul>
       <div class="d-flex">

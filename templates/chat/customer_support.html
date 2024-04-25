@@ -1,46 +1,89 @@
 {% extends "home/base.html" %}
 {% block content %}
+    {% include "home/nav_bar.html" %}
     <div class="container">
         <div class="d-flex flex-column justify-content-center align-items-center vh-100">
-            <div class="col-6">
-                <div class="mb-3">
-                    <label for="chat-receiver" class="form-label">Contact</label>
-                    <input class="form-control" id="chat-receiver" type="text" />
+            <div class="row">
+                <div class="col-6">
+                    <label for="username" class="form-label">Username:</label>
+                    <input class="form-control"
+                           id="username"
+                           value="{{ request.user.username }}"
+                           disabled />
                 </div>
-                <div class="mb-3">
-                    <label for="chat-text" class="form-label">Received</label>
-                    <textarea class="form-control" id="chat-text" rows="10"></textarea>
+                <div class="col-6">
+                    <div class="row align-items-end mb-3">
+                        <div class="col-8">
+                            <label for="chat-receiver" class="form-label">Chat With:</label>
+                            <select class="form-select" id="chat-receiver">
+                                {% for user in users %}<option value="{{ user.username }}">{{ user.username }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-4">
+                            <button id="chat-connect" class="btn btn-success mt-2">Connect</button>
+                        </div>
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label for="input-text" class="form-label">Enter Message</label>
-                    <input class="form-control" id="input-text" type="text" />
+                <div class="col-12">
+                    <div class="mb-3">
+                        <label for="chat-text" class="form-label">Chats</label>
+                        <textarea class="form-control" id="chat-text" rows="10" readonly></textarea>
+                    </div>
                 </div>
-                <input class="btn btn-success" id="submit" type="button" value="Send" />
+                <div class="col">
+                    <div class="mb-3">
+                        <label for="input-text" class="form-label">Message</label>
+                        <input class="form-control" id="input-text" type="text" />
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 {% endblock content %}
 {% block extra_scripts %}
     <script>
-        const chatSocket = new WebSocket(
-            "ws://" + window.location.host + "/ws/chat/?token={{ token }}"
-        );
-        const userNameElement = document.querySelector("#chat-receiver");
+        const username = "{{ request.user.username }}";
+        const token = localStorage.getItem("token") ?? "";
+        const receiverElement = document.querySelector("#chat-receiver");
         const msgInput = document.querySelector("#input-text");
         const chatText = document.querySelector("#chat-text");
+        const chatConnect = document.querySelector("#chat-connect");
 
-        document.querySelector("#submit").addEventListener("click", () => { 
-            chatSocket.send(JSON.stringify({ message: msgInput.value, receiver: userNameElement.value }));
-            chatText.value +=  formatMessage("me" ,msgInput.value);
-            msgInput.value = "";
+        let chatSocket = undefined;
+
+        chatConnect.addEventListener("click", (event) => {
+            if (chatSocket && event.target.innerText === "Disconnect"){
+                msgInput.value = "";
+                chatText.value = "";
+                chatSocket.close();
+                chatSocket = undefined;
+                event.target.innerText = "Connect";
+                event.target.className = "btn btn-success";
+            } else if (chatSocket == undefined) {
+                chatSocket = new WebSocket("ws://" + window.location.host + "/ws/chat/" + receiverElement.value + "/?token=" + token);
+                event.target.innerText = "Disconnect";
+                event.target.className = "btn btn-danger";
+                chatSocket.addEventListener("message", (event) => {
+                    const data = JSON.parse(event.data);
+                    chatText.value += formatMessage(data.sender === username ? "you": data.sender, data.message);
+                });
+            }
         });
 
-        chatSocket.onmessage = function (event) {
-            const data = JSON.parse(event.data);
-            chatText.value +=  formatMessage(data.sender ,data.message);
-        };
+        msgInput.addEventListener("keydown", (event) => {
+            if (event.keyCode === 13) {
+                event.preventDefault();
+                chatSocket.send(
+                    JSON.stringify({
+                        message: msgInput.value
+                    })
+                );
+                chatText.value += formatMessage("you", msgInput.value);
+                msgInput.value = "";
+            }
+        });
 
-        function formatMessage(user, message){
+        function formatMessage(user, message) {
             return user + ": " + message + "\n";
         }
     </script>
