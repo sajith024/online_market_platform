@@ -16,9 +16,8 @@ class ChatConsumer(WebsocketConsumer):
             raise DenyConnection()
 
         self.request_chat = self.scope["url_route"]["kwargs"]["chat_name"]
-        username = self.user.get_username()
-        self.chat = Chat.objects.get_or_create(name=self.user_group_name(username))[0]
         self.reciever = OnlineMarketUser.objects.get(username=self.request_chat)
+        self.chat = Chat.objects.get_or_create(name=self.user_group_name())[0]
 
         if self.user not in self.chat.members.all():
             self.chat.members.add(self.user)
@@ -28,14 +27,13 @@ class ChatConsumer(WebsocketConsumer):
         self.accept()
 
         messages = ChatMessage.objects.filter(
-            Q(receiver=self.reciever, author=self.user)
+            Q(chat=self.chat) & Q(receiver=self.reciever, author=self.user)
             | Q(author=self.reciever, receiver=self.user)
         )
         for message in messages:
             self.send(
                 text_data=json.dumps(
                     {
-                        "type": "chat.message",
                         "message": message.content,
                         "sender": f"{message.author}",
                     }
@@ -58,8 +56,9 @@ class ChatConsumer(WebsocketConsumer):
             chat=self.chat,
             receiver=self.reciever,
         )
+
         async_to_sync(self.channel_layer.group_send)(
-            self.user_group_name(self.request_chat),
+            self.user_group_name(),
             {
                 "type": "chat.message",
                 "message": message.content,
@@ -70,11 +69,14 @@ class ChatConsumer(WebsocketConsumer):
     def chat_message(self, event):
         message = event["message"]
         sender = event["sender"]
-
         self.send(text_data=json.dumps({"message": message, "sender": sender}))
 
-    def user_group_name(self, username):
-        return f"user_{username}"
+    def user_group_name(self):
+
+        if self.user.role.name == "Customer Support":
+            return f"user_{self.user.get_username()}"
+        else:
+            return f"user_{self.reciever.get_username()}"
 
 
 class GroupChatConsumer(WebsocketConsumer):
@@ -108,7 +110,6 @@ class GroupChatConsumer(WebsocketConsumer):
             self.send(
                 text_data=json.dumps(
                     {
-                        "type": "chat.message",
                         "message": message.content,
                         "sender": f"{message.author}",
                     }

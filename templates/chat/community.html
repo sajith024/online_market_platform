@@ -49,17 +49,19 @@
         let chatSocket = undefined;
 
         groupConnect.addEventListener("click", (event) => {
-            if (chatSocket && event.target.innerText === "Disconnect"){
+            if (chatSocket && groupConnect.innerText === "Disconnect"){
                 msgInput.value = "";
                 chatText.value = "";
                 chatSocket.close();
                 chatSocket = undefined;
-                event.target.innerText = "Connect";
-                event.target.className = "btn btn-success";
+                groupConnect.innerText = "Connect";
+                groupConnect.className = "btn btn-success";
+                group.disabled = false;
             } else if (chatSocket == undefined && group.value) {
                 chatSocket = new WebSocket("ws://" + window.location.host + "/ws/chat/group/" + group.value + "/?token=" + token);
-                event.target.innerText = "Disconnect";
-                event.target.className = "btn btn-danger";
+                groupConnect.innerText = "Disconnect";
+                groupConnect.className = "btn btn-danger";
+                group.disabled = true;
                 chatSocket.addEventListener("message", (event) => {
                     const data = JSON.parse(event.data);
                     chatText.value += formatMessage(data.sender === username ? "you": data.sender, data.message);
